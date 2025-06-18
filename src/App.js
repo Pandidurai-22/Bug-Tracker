@@ -21,7 +21,7 @@ function App() {
           <Navbar />
           <main className="container mx-auto px-4 py-6">
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/create-bug" element={<CreateBug />} />
               <Route path="/bug/:id" element={<BugDetail />} />
