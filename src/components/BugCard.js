@@ -48,9 +48,12 @@ const BugCard = ({ bug, index }) => {
             
             <div className="flex items-center space-x-2">
               {assignee && (
-                <span className="flex items-center" title={assignee}>
+                <span className="flex items-center" title={typeof assignee === 'string' ? assignee : assignee.name}>
                   <FaUser className="mr-1" size={10} />
-                  {assignee.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {typeof assignee === 'string' 
+                    ? assignee.split(' ').map(n => n[0]).join('').toUpperCase()
+                    : assignee.avatar || '??'
+                  }
                 </span>
               )}
               {dueDate && (
@@ -59,6 +62,12 @@ const BugCard = ({ bug, index }) => {
                   {new Date(dueDate).toLocaleDateString()}
                 </span>
               )}
+              {/* {createdAt && (
+                <span className="flex items-center">
+                  <FaClock className="mr-1" size={10} />
+                  {new Date(createdAt).toLocaleDateString()}
+                </span>
+              )} */}
             </div>
           </div>
         </div>

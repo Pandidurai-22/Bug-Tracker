@@ -61,14 +61,39 @@ const initialBugs = {
       dueDate: '2025-06-10',
       createdAt: '2025-06-08'
     }
-  ]
+  ],
+    'Closed':[
+    {
+      id:'bug-7',
+      title:'About page carousel',
+      description:'Carousel issue resolved all changes done',
+      priority:'low',
+      status:'closed',
+      dueDate:'',
+      createdAt:'2025-09-12'
+    }
+  ],
+  'Resolved':[
+    {
+      id: 'bug-6',
+      title:'Website is working good',
+      description:'Before website had 505 error now resolved',
+      priority:'low',
+      status:'resolved',
+      dueDate:'',
+      createdAt:'2025-07-09'
+    }
+  ],
+
 };
 
 const statusTitles = {
   'open': 'Open',
   'in-progress': 'In Progress',
   'in-review': 'In Review',
-  'done': 'Done'
+  'done': 'Done',
+  'Resolved': 'Resolved',
+  'Closed':'Closed'
 };
 
 const Home = () => {
