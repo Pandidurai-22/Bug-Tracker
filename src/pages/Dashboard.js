@@ -5,17 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getBugs, updateBugStatus } from '../services/api';
 
 // Constants
-const statuses = ['Open', 'In Progress', 'In Review', 'Done', 'Closed', 'Resolved'];
-
-// Map of status values to their display names
-const statusDisplayNames = {
-  'open': 'Open',
-  'in-progress': 'In Progress',
-  'in-review': 'In Review',
-  'done': 'Done',
-  'closed': 'Closed',
-  'resolved': 'Resolved'
-};
+const statuses = ['Open', 'In Progress', 'In Review', 'Done'];
 const issueTypes = {
   'Bug': 'bg-red-100 text-red-800',
   'Task': 'bg-blue-100 text-blue-800',
@@ -62,16 +52,12 @@ const getStatusClass = (status) => {
       return 'bg-purple-100 text-purple-800 border-purple-200';
     case 'done': 
       return 'bg-green-100 text-green-800 border-green-200';
-    case 'closed':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'resolved':
-      return 'bg-green-50 text-green-600 border-green-100';
     default: 
-      return 'bg-gray-50 text-gray-600 border-gray-100';
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
-const Dashboard = ({ refreshTrigger }) => {
+const Dashboard = () => {
   const [bugs, setBugs] = useState([]);
   const [expandedRow, setExpandedRow] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,21 +70,13 @@ const Dashboard = ({ refreshTrigger }) => {
     setError('');
     try {
       const data = await getBugs();
-      // Transform and format the bug data
-      const formattedBugs = data.map(bug => {
-        // Format the assignee
-        const formattedAssignee = formatAssignee(bug.assignee);
-        
-        // Format the status using the statusDisplayNames mapping
-        const statusKey = bug.status.toLowerCase();
-        const displayStatus = statusDisplayNames[statusKey] || bug.status;
-        
-        return {
-          ...bug,
-          assignee: formattedAssignee,
-          status: displayStatus
-        };
-      });
+      // Transform status to match our UI if needed
+      const formattedBugs = data.map(bug => ({
+        ...bug,
+        status: bug.status.split('-').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ')
+      }));
       setBugs(formattedBugs);
     } catch (err) {
       console.error('Error fetching bugs:', err);
@@ -108,10 +86,10 @@ const Dashboard = ({ refreshTrigger }) => {
     }
   };
 
-  // Initial fetch and refetch when refreshTrigger changes
+  // Initial fetch
   useEffect(() => {
     fetchBugs();
-  }, [refreshTrigger]);
+  }, []);
 
   // Handle drag end for status changes
   const onDragEnd = async (result) => {
@@ -125,17 +103,12 @@ const Dashboard = ({ refreshTrigger }) => {
     }
 
     const bugId = draggableId;
-    const newDisplayStatus = destination.droppableId;
-    
-    // Find the backend status key from the display status
-    const statusKey = Object.entries(statusDisplayNames).find(
-      ([key, value]) => value === newDisplayStatus
-    )?.[0] || newDisplayStatus.toLowerCase().replace(' ', '-');
+    const newStatus = destination.droppableId;
     
     // Optimistic UI update
     const updatedBugs = bugs.map(bug => {
       if (bug.id === bugId) {
-        return { ...bug, status: newDisplayStatus };
+        return { ...bug, status: newStatus };
       }
       return bug;
     });
@@ -143,8 +116,8 @@ const Dashboard = ({ refreshTrigger }) => {
     setBugs(updatedBugs);
 
     try {
-      // Update status in the backend using the status key
-      await updateBugStatus(bugId, statusKey);
+      // Update status in the backend
+      await updateBugStatus(bugId, newStatus.toLowerCase().replace(' ', '-'));
       // Refresh bugs to ensure consistency
       await fetchBugs();
     } catch (err) {
@@ -177,15 +150,14 @@ const Dashboard = ({ refreshTrigger }) => {
     <div className="p-6 bg-gray-50 ">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Bug Tracker</h1>
           <p className="text-gray-600">Track and manage all your bugs in one place</p>
         </div>
         <button
           onClick={() => navigate('/create-bug')}
           className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
         >
-          <FaPlus className="mr-2" /> 
-          <span className='text-sm md:text-md'>Create Bug</span>
+          <FaPlus className="mr-2" /> Create Bug
         </button>
       </div>
 
@@ -195,10 +167,10 @@ const Dashboard = ({ refreshTrigger }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-12 gap-3 pb-4">
+      <div className="flex space-x-4 overflow-x-auto pb-4">
         <DragDropContext onDragEnd={onDragEnd}>
           {statuses.map((status) => (
-            <div key={status} className="col-span-12 md:col-span-6 lg:col-span-3 ">
+            <div key={status} className="flex-shrink-0 w-80">
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className={`px-4 py-3 ${getStatusClass(status)} font-medium text-sm`}>
                   <div className="flex justify-between items-center">
@@ -249,13 +221,9 @@ const Dashboard = ({ refreshTrigger }) => {
                                 <div className="flex justify-between items-center text-xs text-gray-500">
                                   <div className="flex items-center">
                                     <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs mr-1">
-                                      {bug.assignee ? 
-                                        (typeof bug.assignee === 'string' ? getInitials(bug.assignee) : getInitials(bug.assignee.name)) 
-                                        : '??'}
+                                      {bug.assignee ? getInitials(bug.assignee.name) : '??'}
                                     </div>
-                                    <span>{bug.assignee ? 
-                                      (typeof bug.assignee === 'string' ? bug.assignee : bug.assignee.name) 
-                                      : 'Unassigned'}</span>
+                                    <span>{bug.assignee?.name || 'Unassigned'}</span>
                                   </div>
                                   <div className="text-xs text-gray-400">
                                     {bug.dueDate ? new Date(bug.dueDate).toLocaleDateString() : 'No due date'}
@@ -274,7 +242,7 @@ const Dashboard = ({ refreshTrigger }) => {
                                     <div>
                                       <span className="font-medium text-gray-500">Created:</span>
                                       <span className="ml-1">
-                                        {bug.createdAt ? new Date(bug.createdAt).toLocaleDateString() : 'N/A'}
+                                        {bug.created ? new Date(bug.created).toLocaleDateString() : 'N/A'}
                                       </span>
                                     </div>
                                     <div>

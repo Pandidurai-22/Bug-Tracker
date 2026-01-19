@@ -1,22 +1,15 @@
-const API_BASE_URL ='https://bug-tracker-backend-83mn.onrender.com/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 // Fetch all bugs
 export const getBugs = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/bugs`);
-    const data = await response.json();
     if (!response.ok) {
-      const errorMessage = data.message || `HTTP error! status: ${response.status}`;
-      console.error('Server error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: data
-      });
-      throw new Error(`Failed to fetch bugs: ${errorMessage}`);
+      throw new Error('Failed to fetch bugs');
     }
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error('Error in getBugs:', error);
+    console.error('Error fetching bugs:', error);
     throw error;
   }
 };
