@@ -1,6 +1,6 @@
 // src/components/navbar.js
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBug, FaPlus, FaSignOutAlt } from 'react-icons/fa';
+import { FaBug, FaPlus, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../contexts/auth.context';
 
@@ -15,9 +15,15 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  // Check if user is admin (you can enhance this with actual role check)
+  const isAdmin = user?.roles?.some(role => role.name === 'ROLE_ADMIN') || 
+                  user?.roles?.some(role => role === 'ROLE_ADMIN') ||
+                  user?.username === 'admin'; // Fallback for testing
+
   const navLinks = isAuthenticated ? [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/create-bug', label: 'Create Bug', icon: <FaPlus className="mr-1" /> },
+    ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: <FaCog className="mr-1" /> }] : []),
   ] : [];
 
   return (

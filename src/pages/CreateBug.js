@@ -13,7 +13,9 @@ const CreateBug = ({ onBugCreated }) => {
     status: 'open',
     assignee: '',
     dueDate: '',
-    type: 'Bug'
+    type: 'Bug',
+    stack: '',  // Frontend, Backend, AI, etc.
+    tags: ''  // AI-predicted tags
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -31,14 +33,57 @@ const CreateBug = ({ onBugCreated }) => {
 
     try {
       setIsAnalyzing(true);
-      const analysis = await analyzeBugDescription(description);
+      const analysis = await analyzeBugDescription(description, formData.title);
+      console.log('AI Analysis:', analysis); // Debug
+      console.log(' Tags:', analysis?.tags); // Debug
       setAiInsights(analysis);
       
-      // Auto-fill priority and severity if they haven't been manually set
+      // Map AI tags to stack field (also check description for AI keywords)
+      const mapTagsToStack = (tags, desc = '') => {
+        // Combine tags and description for better detection
+        const searchText = (
+          (Array.isArray(tags) ? tags.join(', ') : (tags || '')) + ' ' + 
+          (description || '')
+        ).toLowerCase();
+        
+        // Priority order: AI first (most specific), then others
+        
+        // AI detection (check multiple keywords)
+        const aiKeywords = ['ai', 'machine learning', 'ml', 'neural network', 'deep learning', 
+                           'nlp', 'natural language', 'model prediction', 'ai service', 
+                           'embedding', 'classification model', 'recommendation system'];
+        if (aiKeywords.some(keyword => searchText.includes(keyword))) {
+          return 'AI';
+        }
+        
+        // Frontend detection
+        if (searchText.includes('ui') || searchText.includes('frontend') || 
+            searchText.includes('button') || searchText.includes('layout') ||
+            searchText.includes('css') || searchText.includes('html') ||
+            searchText.includes('component') || searchText.includes('interface')) {
+          return 'Frontend';
+        }
+        
+        // Backend detection (check for backend-specific terms)
+        if (searchText.includes('backend') || searchText.includes('server') || 
+            searchText.includes('api') || searchText.includes('endpoint') ||
+            searchText.includes('database') || searchText.includes('sql') ||
+            searchText.includes('query') || searchText.includes('authentication') ||
+            searchText.includes('security') || searchText.includes('performance')) {
+          return 'Backend';
+        }
+        
+        return '';
+      };
+      
+      // Auto-fill priority, severity, stack, and tags if they haven't been manually set
       setFormData(prev => ({
         ...prev,
-        priority: prev.priority || analysis.priority.toLowerCase(),
-        severity: analysis.severity.toLowerCase()
+        priority: prev.priority || (analysis.priority ? analysis.priority.toLowerCase() : 'medium'),
+        severity: analysis.severity ? analysis.severity.toLowerCase() : (prev.severity || 'normal'),
+        // Use both tags and description for better stack detection
+        stack: prev.stack || mapTagsToStack(analysis.tags, description || formData.description),
+        tags: prev.tags || (Array.isArray(analysis.tags) ? analysis.tags.join(', ') : (analysis.tags || ''))
       }));
       
     } catch (error) {
@@ -96,6 +141,8 @@ const CreateBug = ({ onBugCreated }) => {
         id: null, // Let the backend generate the ID
         key: `TEMP-${Date.now()}`,
         reporter: 'Current User', // This should come from auth context in a real app
+        // Include tags from AI or form
+        tags: formData.tags || (aiInsights?.tags ? (Array.isArray(aiInsights.tags) ? aiInsights.tags.join(', ') : aiInsights.tags) : ''),
         // Format dates properly for backend
         createdAt:formData.createdAt ? formatDateForBackend(formData.createdAt) : null ,
         updatedAt: now,
@@ -247,7 +294,7 @@ const CreateBug = ({ onBugCreated }) => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Assignee */}
             <div className="space-y-2">
               <label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
@@ -272,6 +319,44 @@ const CreateBug = ({ onBugCreated }) => {
                   >
                     {aiInsights.suggestedAssignee}
                   </button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="stack" className="block text-sm font-medium text-gray-700">
+                Stack
+                {aiInsights?.tags && (
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    (AI Suggestion: {Array.isArray(aiInsights.tags) ? aiInsights.tags.join(', ') : aiInsights.tags})
+                  </span>
+                )}
+              </label>
+              <select
+                id="stack"
+                name="stack"
+                value={formData.stack}
+                onChange={handleChange}
+                className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Stack</option>
+                <option value="Frontend">Frontend</option>
+                <option value="AI">AI</option>
+                <option value="Backend">Backend</option>
+                <option value="Other">Other</option>
+              </select>
+              {aiInsights?.tags && (
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500">AI Tags:</span>
+                  {Array.isArray(aiInsights.tags) ? aiInsights.tags.map((tag, idx) => (
+                    <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {tag}
+                    </span>
+                  )) : (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {aiInsights.tags}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

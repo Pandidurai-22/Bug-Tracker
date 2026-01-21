@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../../services/auth.service';
+import { AuthContext } from '../../contexts/auth.context';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -10,7 +11,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [success, setSuccess] = useState('');
+  const { login } = useContext(AuthContext);
 
   // const handleSubmit = async (e) => {
   //   e.preventDefault();
@@ -43,7 +44,6 @@ export default function Register() {
     setLoading(true);
     const result = await authService.register(username, email, password);
     if (result.success) {
-      setSuccess(result.message); // Show success message
       // Optionally redirect to login after a delay
       setTimeout(() => {
         navigate('/login');
@@ -144,7 +144,7 @@ export default function Register() {
             </div>
           </div>
 
-          <div>
+          <div className="space-y-3">
             <button
               type="submit"
               disabled={loading}
@@ -152,6 +152,38 @@ export default function Register() {
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or</span>
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={async () => {
+                setError('');
+                try {
+                  const result = await login('testing', 'testing123');
+                  if (result.success) {
+                    navigate('/dashboard');
+                  } else {
+                    setError(result.message || 'Test login failed. Please try registering.');
+                  }
+                } catch (err) {
+                  setError('Test login failed. Please try registering.');
+                }
+              }}
+              className="group relative w-full flex justify-center py-2 px-4 border-2 border-green-500 text-sm font-medium rounded-md text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+            >
+              Quick Test Login (Demo)
+            </button>
+            <p className="text-xs text-center text-gray-500">
+              Skip registration and login instantly with test account
+            </p>
           </div>
         </form>
       </div>

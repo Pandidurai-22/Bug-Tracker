@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import BugCard from '../components/BugCard';
-import KanbanBoard from "../components/kanbanboard";
 
 const initialBugs = {
   'open': [
@@ -100,7 +99,7 @@ const Home = () => {
   const [bugs, setBugs] = useState(initialBugs);
 
   const onDragEnd = (result) => {
-    const { source, destination, draggableId } = result;
+    const { source, destination } = result;
 
     // If dropped outside the list or in the same position
     if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {

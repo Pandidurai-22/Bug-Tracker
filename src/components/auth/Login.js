@@ -51,7 +51,7 @@ const Login = () => {
                 type="text"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username for testing(testing)"
+                placeholder="Username for admin(admin)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -64,20 +64,48 @@ const Login = () => {
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password for testing(testing123)"
+                placeholder="Password for admin(admin123)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
 
-          <div>
+          <div className="space-y-3">
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Sign in
             </button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or</span>
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={async () => {
+                setError('');
+                const result = await login('testing', 'testing123');
+                if (result.success) {
+                  navigate('/dashboard');
+                } else {
+                  setError(result.message || 'Test login failed. Please try regular login.');
+                }
+              }}
+              className="group relative w-full flex justify-center py-2 px-4 border-2 border-green-500 text-sm font-medium rounded-md text-green-600 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+            >
+            Quick Test Login (Demo)
+            </button>
+            <p className="text-xs text-center text-gray-500">
+              Skip registration and login instantly with test account
+            </p>
           </div>
         </form>
       </div>

@@ -41,16 +41,17 @@
 
 
 // src/App.js
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 // import { AuthProvider, AuthContext, useAuth } from './contexts/auth.context';
 // In App.js, update the import line to include useAuth
-import { AuthProvider, AuthContext, useAuth } from './contexts/auth.context';
+import { AuthProvider, useAuth } from './contexts/auth.context';
 import Navbar from './components/navbar';
 import Home from './pages/Home';
 import CreateBug from './pages/CreateBug';
 import Dashboard from './pages/Dashboard';
 import BugDetail from './pages/BugDetail';
+import AdminDashboard from './pages/AdminDashboard';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import './App.css';
@@ -130,6 +131,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <BugDetail />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
                     </ProtectedRoute>
                   } 
                 />

@@ -16,10 +16,10 @@ const statusColors = {
 };
 
 const BugCard = ({ bug, index }) => {
-  const { id, title, description, priority, status, assignee, dueDate, createdAt } = bug;
+  const { id, title, description, priority, status, assignee, dueDate } = bug;
   
   return (
-    <Draggable draggableId={id} index={index}>
+    <Draggable draggableId={String(id)} index={index}>
       {(provided) => (
         <div
           ref={provided.innerRef}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { FaBug, FaEllipsisV, FaUser, FaClock, FaPaperclip, FaComment, FaPlus, FaSync } from 'react-icons/fa';
+import { FaPaperclip, FaComment, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { getBugs, updateBugStatus } from '../services/api';
 
@@ -15,12 +15,6 @@ const statusDisplayNames = {
   'done': 'Done',
   'closed': 'Closed',
   'resolved': 'Resolved'
-};
-const issueTypes = {
-  'Bug': 'bg-red-100 text-red-800',
-  'Task': 'bg-blue-100 text-blue-800',
-  'Story': 'bg-green-100 text-green-800',
-  'Epic': 'bg-purple-100 text-purple-800'
 };
 
 const priorityColors = {
@@ -124,7 +118,7 @@ const Dashboard = ({ refreshTrigger }) => {
       return;
     }
 
-    const bugId = draggableId;
+    const bugId = parseInt(draggableId, 10); // Convert string back to number
     const newDisplayStatus = destination.droppableId;
     
     // Find the backend status key from the display status
@@ -216,7 +210,7 @@ const Dashboard = ({ refreshTrigger }) => {
                       className="p-2 min-h-20"
                     >
                       {bugsByStatus[status]?.map((bug, index) => (
-                        <Draggable key={bug.id} draggableId={bug.id} index={index}>
+                        <Draggable key={bug.id} draggableId={String(bug.id)} index={index}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}

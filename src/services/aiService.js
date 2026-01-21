@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'http://localhost:8080/api/ai';
-const API_BASE_URL = 'https://bug-tracker-backend-83mn.onrender.com/api/ai';
+const API_BASE_URL = 'http://localhost:8080/api/ai';
+//const API_BASE_URL = 'https://bug-tracker-backend-83mn.onrender.com/api/ai';
 
 /**
  * Get predicted priority for a bug description
@@ -90,24 +90,79 @@ export const getSuggestedSolutions = async (description) => {
 };
 
 /**
+ * Get comprehensive AI analysis (includes tags, severity, priority)
+ * Uses backend endpoint that calls AI service
+ * @param {string} description - Bug description
+ * @param {string} title - Bug title (optional)
+ * @returns {Promise<Object>} Comprehensive AI analysis with tags
+ */
+export const getComprehensiveAnalysis = async (description, title = '') => {
+  try {
+    const API_URL = API_BASE_URL.replace('/ai', '');
+    const response = await axios.post(`${API_URL}/bugs/ai/analyze`, {
+      title: title,
+      description: description
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting comprehensive analysis:', error);
+    return null;
+  }
+};
+
+/**
  * Analyze bug description and return comprehensive AI insights
  * @param {string} description - Bug description
- * @returns {Promise<Object>} AI analysis results
+ * @param {string} title - Bug title (optional)
+ * @returns {Promise<Object>} AI analysis results with tags
  */
-export const analyzeBugDescription = async (description) => {
-  const [priority, severity, entities, similarBugs, solutions] = await Promise.all([
-    getPredictedPriority(description),
-    getPredictedSeverity(description),
-    extractEntities(description),
-    findSimilarBugs(description, 3),
-    getSuggestedSolutions(description)
-  ]);
+export const analyzeBugDescription = async (description, title = '') => {
+  try {
+    // Use comprehensive analysis endpoint (includes tags)
+    const comprehensive = await getComprehensiveAnalysis(description, title);
+    if (comprehensive && comprehensive.tags) {
+      return {
+        priority: comprehensive.priority,
+        severity: comprehensive.severity,
+        tags: comprehensive.tags || [],
+        similarBugs: comprehensive.similarBugs || [],
+        confidence: comprehensive.confidence,
+        modelVersion: comprehensive.modelVersion,
+        needsReview: comprehensive.needsReview || false
+      };
+    }
+  } catch (error) {
+    console.error('Comprehensive analysis failed:', error);
+  }
 
-  return {
-    priority,
-    severity,
-    entities,
-    similarBugs,
-    solutions
-  };
+  // Fallback to individual calls if comprehensive fails
+  try {
+    const [priority, severity] = await Promise.all([
+      getPredictedPriority(description).catch(() => 'MEDIUM'),
+      getPredictedSeverity(description).catch(() => 'NORMAL')
+    ]);
+
+    return {
+      priority,
+      severity,
+      tags: [], // No tags from fallback
+      similarBugs: [],
+      confidence: 0.5,
+      needsReview: true
+    };
+  } catch (error) {
+    console.error('Fallback analysis failed:', error);
+    return {
+      priority: 'MEDIUM',
+      severity: 'NORMAL',
+      tags: [],
+      similarBugs: [],
+      confidence: 0.0,
+      needsReview: true
+    };
+  }
 };
