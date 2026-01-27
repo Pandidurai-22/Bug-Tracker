@@ -7,7 +7,7 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, mockAdminLogin } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -103,6 +103,23 @@ const Login = () => {
             >
             Quick Test Login (Demo)
             </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                setError('');
+                const result = mockAdminLogin();
+                if (result.success) {
+                  navigate('/admin');
+                } else {
+                  setError('Admin login failed');
+                }
+              }}
+              className="group relative w-full flex justify-center py-2 px-4 border-2 border-purple-500 text-sm font-medium rounded-md text-purple-600 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+            >
+              Quick Admin Access (Skip Backend)
+            </button>
+            
             <p className="text-xs text-center text-gray-500">
               Skip registration and login instantly with test account
             </p>

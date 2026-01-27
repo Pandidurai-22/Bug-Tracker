@@ -46,6 +46,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const mockAdminLogin = () => {
+    // Create a mock admin user object (works without backend)
+    const mockAdminUser = {
+      id: 999,
+      username: 'admin',
+      email: 'admin@bugtracker.com',
+      accessToken: 'mock-admin-token-' + Date.now(),
+      roles: [{ name: 'ROLE_ADMIN' }],
+      type: 'Bearer'
+    };
+    
+    // Store in localStorage (same format as real login)
+    localStorage.setItem('user', JSON.stringify(mockAdminUser));
+    
+    // Update context state
+    setUser(mockAdminUser);
+    setIsAuthenticated(true);
+    
+    return { success: true };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -54,7 +75,8 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         login,
         logout,
-        register
+        register,
+        mockAdminLogin
       }}
     >
       {!isLoading && children}

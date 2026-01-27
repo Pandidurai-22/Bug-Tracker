@@ -16,7 +16,7 @@ const statusColors = {
 };
 
 const BugCard = ({ bug, index }) => {
-  const { id, title, description, priority, status, assignee, dueDate } = bug;
+  const { id, title, description, priority, status, assignee, dueDate, createdAt } = bug;
   
   return (
     <Draggable draggableId={String(id)} index={index}>

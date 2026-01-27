@@ -1,5 +1,5 @@
 //const API_BASE_URL ='https://bug-tracker-backend-83mn.onrender.com/api';
- const API_BASE_URL ='http://localhost:8080/api';
+const API_BASE_URL ='http://localhost:8080/api';
 
 // Fetch all bugs
 export const getBugs = async () => {

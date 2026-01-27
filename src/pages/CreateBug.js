@@ -38,52 +38,152 @@ const CreateBug = ({ onBugCreated }) => {
       console.log(' Tags:', analysis?.tags); // Debug
       setAiInsights(analysis);
       
-      // Map AI tags to stack field (also check description for AI keywords)
+      // Map AI tags to stack field - prioritize tags from AI, use description as fallback
       const mapTagsToStack = (tags, desc = '') => {
-        // Combine tags and description for better detection
-        const searchText = (
-          (Array.isArray(tags) ? tags.join(', ') : (tags || '')) + ' ' + 
-          (description || '')
-        ).toLowerCase();
+        const descLower = (desc || description || '').toLowerCase();
         
-        // Priority order: AI first (most specific), then others
-        
-        // AI detection (check multiple keywords)
-        const aiKeywords = ['ai', 'machine learning', 'ml', 'neural network', 'deep learning', 
-                           'nlp', 'natural language', 'model prediction', 'ai service', 
-                           'embedding', 'classification model', 'recommendation system'];
-        if (aiKeywords.some(keyword => searchText.includes(keyword))) {
-          return 'AI';
+        // Handle tags - could be array, string, or comma-separated string
+        let tagsArray = [];
+        if (Array.isArray(tags)) {
+          tagsArray = tags;
+        } else if (typeof tags === 'string') {
+          // Split comma-separated string and clean up
+          tagsArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
         }
         
-        // Frontend detection
-        if (searchText.includes('ui') || searchText.includes('frontend') || 
-            searchText.includes('button') || searchText.includes('layout') ||
-            searchText.includes('css') || searchText.includes('html') ||
-            searchText.includes('component') || searchText.includes('interface')) {
+         const tagsLower = tagsArray.map(t => t.toLowerCase());
+         console.log('mapTagsToStack - Input tags:', tags, 'Processed tags:', tagsLower, 'Description:', descLower);
+         
+         // FIRST: Check tags from AI service (most reliable)
+         // When both AI and UI are present, check description to determine priority
+         const hasAI = tagsLower.includes('ai');
+         const hasUI = tagsLower.includes('ui');
+         
+         // If both AI and UI tags exist, check description to determine which is more relevant
+         if (hasAI && hasUI) {
+           // Check description for AI-related keywords (AI issues take priority when description indicates AI)
+           const aiKeywords = ['ai', 'model', 'prediction', 'machine learning', 'ml', 'neural', 
+                              'deep learning', 'nlp', 'classification', 'embedding', 'training'];
+           const hasAIDescription = aiKeywords.some(keyword => descLower.includes(keyword));
+           
+           if (hasAIDescription) {
+             return 'AI'; // Description indicates AI issue, prioritize AI
+           }
+           // Otherwise, check for UI-related keywords
+           const uiKeywords = ['ui', 'interface', 'page', 'button', 'layout', 'design', 'visual', 
+                              'styling', 'css', 'html', 'component', 'frontend'];
+           const hasUIDescription = uiKeywords.some(keyword => descLower.includes(keyword));
+           
+           if (hasUIDescription) {
+             return 'Frontend'; // Description indicates UI issue, prioritize UI
+           }
+           // If description doesn't clearly indicate either, default to UI (more common)
+           return 'Frontend';
+         }
+         
+         // UI tag -> Frontend stack (when UI is present without AI)
+         if (hasUI) {
+           return 'Frontend';
+         }
+         
+         // AI tag -> AI stack (when AI is present without UI)
+         if (hasAI) {
+           return 'AI';
+         }
+        
+        // Backend tag -> Backend stack
+        if (tagsLower.includes('backend')) {
+          return 'Backend';
+        }
+        
+        // API tag -> Backend stack (APIs are backend)
+        if (tagsLower.includes('api')) {
+          return 'Backend';
+        }
+        
+        // Database tag -> Backend stack
+        if (tagsLower.includes('database')) {
+          return 'Backend';
+        }
+        
+        // Security tag -> Backend stack (usually backend concern)
+        if (tagsLower.includes('security')) {
+          return 'Backend';
+        }
+        
+        // Authentication tag -> Backend stack (auth is usually backend)
+        // BUT: If UI is also present, it's a frontend auth issue
+        if (tagsLower.includes('authentication')) {
+          // If UI is present, it's frontend auth (login page, etc.)
+          if (tagsLower.includes('ui')) {
+            return 'Frontend';
+          }
+          return 'Backend';
+        }
+        
+        // Performance tag -> check context (could be either)
+        if (tagsLower.includes('performance')) {
+          // If also has UI tag, it's Frontend, otherwise Backend
+          if (tagsLower.includes('ui')) {
+            return 'Frontend';
+          }
+          return 'Backend';
+        }
+        
+        // SECOND: Fallback to description keyword detection if no relevant tags
+        // Frontend detection from description
+        if (descLower.includes('ui') || descLower.includes('frontend') || 
+            descLower.includes('button') || descLower.includes('layout') ||
+            descLower.includes('css') || descLower.includes('html') ||
+            descLower.includes('component') || descLower.includes('interface') ||
+            descLower.includes('page') || descLower.includes('design') ||
+            descLower.includes('visual') || descLower.includes('styling')) {
           return 'Frontend';
         }
         
-        // Backend detection (check for backend-specific terms)
-        if (searchText.includes('backend') || searchText.includes('server') || 
-            searchText.includes('api') || searchText.includes('endpoint') ||
-            searchText.includes('database') || searchText.includes('sql') ||
-            searchText.includes('query') || searchText.includes('authentication') ||
-            searchText.includes('security') || searchText.includes('performance')) {
+        // Backend detection from description
+        if (descLower.includes('backend') || descLower.includes('server') || 
+            descLower.includes('api') || descLower.includes('endpoint') ||
+            descLower.includes('database') || descLower.includes('sql') ||
+            descLower.includes('query') || descLower.includes('authentication') ||
+            descLower.includes('security') || descLower.includes('performance')) {
           return 'Backend';
+        }
+        
+        // AI detection from description (only if clear AI-related keywords)
+        const aiKeywords = ['machine learning', 'ml model', 'neural network', 'deep learning', 
+                           'nlp', 'natural language processing', 'model prediction', 'ai model', 
+                           'embedding', 'classification model', 'recommendation system', 'ml training'];
+        if (aiKeywords.some(keyword => descLower.includes(keyword))) {
+          return 'AI';
         }
         
         return '';
       };
       
       // Auto-fill priority, severity, stack, and tags if they haven't been manually set
+      // Normalize tags to array format for consistent processing
+      let tagsArray = [];
+      if (Array.isArray(analysis.tags)) {
+        tagsArray = analysis.tags;
+      } else if (analysis.tags) {
+        if (typeof analysis.tags === 'string') {
+          tagsArray = analysis.tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        } else {
+          tagsArray = [analysis.tags];
+        }
+      }
+      
+      const mappedStack = mapTagsToStack(tagsArray, description || formData.description);
+      console.log('AI Tags:', tagsArray, 'Mapped Stack:', mappedStack, 'Description:', description); // Debug
+      
       setFormData(prev => ({
         ...prev,
         priority: prev.priority || (analysis.priority ? analysis.priority.toLowerCase() : 'medium'),
         severity: analysis.severity ? analysis.severity.toLowerCase() : (prev.severity || 'normal'),
-        // Use both tags and description for better stack detection
-        stack: prev.stack || mapTagsToStack(analysis.tags, description || formData.description),
-        tags: prev.tags || (Array.isArray(analysis.tags) ? analysis.tags.join(', ') : (analysis.tags || ''))
+        // Always update stack when we have AI analysis (user can manually override if needed)
+        stack: mappedStack || prev.stack,
+        tags: prev.tags || (tagsArray.length > 0 ? tagsArray.join(', ') : '')
       }));
       
     } catch (error) {
